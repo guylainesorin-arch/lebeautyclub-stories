@@ -135,8 +135,8 @@
         <div class="dl-bar">
           <span class="dl-bar-info">Clique sur le visuel pour changer de slide</span>
           <div class="dl-btns">
-            <button class="dl-btn" id="dlOne" onclick="downloadCurrent()">⬇️ Cette slide</button>
-            <button class="dl-btn all" id="dlAll" onclick="downloadAll()">⬇️ Toutes</button>
+            <button class="dl-btn" id="dlOne" onclick="downloadCurrent()">⬇ Cette slide</button>
+            <button class="dl-btn all" id="dlAll" onclick="downloadAll()">⬇ Toutes</button>
           </div>
         </div>
       </div>
@@ -183,7 +183,7 @@ const photoKeywords = {
 function getPhotoUrl(type, seed) {
   const kws = photoKeywords[type] || photoKeywords.coulisses;
   const kw = kws[seed % kws.length];
-  return https://source.unsplash.com/900x1600/?${encodeURIComponent(kw)}&sig=${Math.floor(Date.now()/60000)}_${seed};
+  return `https://source.unsplash.com/900x1600/?${encodeURIComponent(kw)}&sig=${Math.floor(Date.now()/60000)}_${seed}`;
 }
 
 const SYSTEM_BASE = `Tu es Guylaine, fondatrice du Beauty Club (lebeautyclub.fr).
@@ -200,11 +200,11 @@ Tu écris de vraies phrases complètes. Jamais de tirets comme séparateurs. Tu 
 COMPTE : @lebeautyclub__`;
 
 const typePrompts = {
-  coulisses:  ${SYSTEM_BASE}\n\nPOUR CETTE STORY : montre les vraies coulisses du Beauty Club — ce que tu crées en ce moment, une décision que tu as prise, un truc qui s'est bien ou mal passé. Montre le vrai, pas le parfait.,
-  education:  ${SYSTEM_BASE}\n\nPOUR CETTE STORY : enseigne un truc concret sur Instagram aux esthéticiennes. Explique pourquoi ça marche. Ton double regard community manager et esthéticienne doit se sentir.,
-  temoignage: ${SYSTEM_BASE}\n\nPOUR CETTE STORY : partage un moment vrai de ta vie d'entrepreneuse — une galère, un doute, une victoire. Quelque chose qui va faire dire "oh my god c'est exactement ça".,
-  vente:      ${SYSTEM_BASE}\n\nPOUR CETTE STORY : parle du Beauty Club avec envie, pas avec pression. Montre ce que ça change concrètement dans le quotidien d'une esthéticienne.,
-  sondage:    ${SYSTEM_BASE}\n\nPOUR CETTE STORY : crée une story interactive — sondage, quiz ou question ouverte — qui donne envie de répondre.,
+  coulisses:  `${SYSTEM_BASE}\n\nPOUR CETTE STORY : montre les vraies coulisses du Beauty Club — ce que tu crées en ce moment, une décision que tu as prise, un truc qui s'est bien ou mal passé. Montre le vrai, pas le parfait.`,
+  education:  `${SYSTEM_BASE}\n\nPOUR CETTE STORY : enseigne un truc concret sur Instagram aux esthéticiennes. Explique pourquoi ça marche. Ton double regard community manager et esthéticienne doit se sentir.`,
+  temoignage: `${SYSTEM_BASE}\n\nPOUR CETTE STORY : partage un moment vrai de ta vie d'entrepreneuse — une galère, un doute, une victoire. Quelque chose qui va faire dire "oh my god c'est exactement ça".`,
+  vente:      `${SYSTEM_BASE}\n\nPOUR CETTE STORY : parle du Beauty Club avec envie, pas avec pression. Montre ce que ça change concrètement dans le quotidien d'une esthéticienne.`,
+  sondage:    `${SYSTEM_BASE}\n\nPOUR CETTE STORY : crée une story interactive — sondage, quiz ou question ouverte — qui donne envie de répondre.`,
 };
 
 const now = new Date();
@@ -251,7 +251,7 @@ slides = tableau de 3 à 5 strings. Vraies phrases. Pas de tirets. Pas de hashta
     try { data = JSON.parse(responseText); } catch(e) { throw new Error('Réponse invalide: ' + responseText.slice(0,200)); }
     if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
     const raw = data.content?.find(b => b.type==='text')?.text || '';
-    const clean = raw.replace(/json|/g,'').trim();
+    const clean = raw.replace(/```json|```/g,'').trim();
     const story = JSON.parse(clean);
 
     currentStory = {...story, type:selectedType, date:now.toLocaleDateString('fr-FR')};
@@ -285,15 +285,15 @@ slides = tableau de 3 à 5 strings. Vraies phrases. Pas de tirets. Pas de hashta
 function buildDots() {
   const dots = document.getElementById('slidesDots');
   dots.innerHTML = currentSlides.map((_,i) =>
-    <button class="slide-dot ${i===0?'active':''}" onclick="goToSlide(${i})"></button>
+    `<button class="slide-dot ${i===0?'active':''}" onclick="goToSlide(${i})"></button>`
   ).join('');
-  document.getElementById('slideCounter').textContent = 1 / ${currentSlides.length};
+  document.getElementById('slideCounter').textContent = `1 / ${currentSlides.length}`;
 }
 
 async function goToSlide(i) {
   currentSlideIdx = i;
   document.querySelectorAll('.slide-dot').forEach((d,j) => d.classList.toggle('active', j===i));
-  document.getElementById('slideCounter').textContent = ${i+1} / ${currentSlides.length};
+  document.getElementById('slideCounter').textContent = `${i+1} / ${currentSlides.length}`;
   await renderSlide(i);
 }
 
@@ -322,4 +322,154 @@ async function renderSlide(idx) {
     const img = await loadImage(photoUrl);
     loading.style.display = 'none';
     const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
-    const sw = img.width *
+    const sw = img.width * scale, sh = img.height * scale;
+    ctx.drawImage(img, (canvas.width-sw)/2, (canvas.height-sh)/2, sw, sh);
+  } catch(e) {
+    loading.style.display = 'none';
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+
+  // Overlay
+  const ov = ctx.createLinearGradient(0,0,0,canvas.height);
+  ov.addColorStop(0,   'rgba(0,0,0,0.1)');
+  ov.addColorStop(0.45,'rgba(0,0,0,0.25)');
+  ov.addColorStop(1,   'rgba(0,0,0,0.80)');
+  ctx.fillStyle = ov;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  const s = 2;
+
+  // Slide counter top left
+  ctx.font = `300 ${10*s}px 'DM Sans',sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(`${idx+1} / ${currentSlides.length}`, 20*s, 22*s);
+
+  // Main text bottom
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  const maxW = (W - 56) * s;
+  const fontSize = 36 * s;
+  ctx.font = `300 ${fontSize}px 'Cormorant Garamond',serif`;
+  const lines = wrapText(ctx, slideText, maxW, fontSize);
+  const lineH = fontSize * 1.28;
+  const totalH = lines.length * lineH;
+  const baseY = canvas.height - 48*s;
+
+  lines.forEach((line, i) => {
+    ctx.shadowColor = 'rgba(0,0,0,0.7)';
+    ctx.shadowBlur = 16;
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.fillText(line, canvas.width/2, baseY - totalH + (i+1)*lineH);
+  });
+  ctx.shadowBlur = 0;
+
+  // Branding
+  ctx.font = `300 ${9*s}px 'DM Sans',sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('LE BEAUTY CLUB', canvas.width/2, canvas.height - 14*s);
+}
+
+function loadImage(url) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => res(img);
+    img.onerror = () => rej();
+    img.src = url;
+    setTimeout(() => rej(), 9000);
+  });
+}
+
+function wrapText(ctx, text, maxWidth, fontSize) {
+  ctx.font = `300 ${fontSize}px 'Cormorant Garamond',serif`;
+  const words = text.split(' ');
+  const lines = [];
+  let cur = '';
+  for (const w of words) {
+    const test = cur ? cur+' '+w : w;
+    if (ctx.measureText(test).width > maxWidth && cur) { lines.push(cur); cur = w; }
+    else cur = test;
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+function downloadCurrent() {
+  const canvas = document.getElementById('storyCanvas');
+  const a = document.createElement('a');
+  a.download = `lebeautyclub-story-${currentSlideIdx+1}.png`;
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+async function downloadAll() {
+  const btn = document.getElementById('dlAll');
+  btn.textContent = '⏳ En cours…'; btn.disabled = true;
+  for (let i = 0; i < currentSlides.length; i++) {
+    await renderSlide(i);
+    await new Promise(r => setTimeout(r, 400));
+    downloadCurrent();
+    await new Promise(r => setTimeout(r, 400));
+  }
+  await renderSlide(currentSlideIdx);
+  btn.textContent = '⬇ Toutes'; btn.disabled = false;
+}
+
+function copyCaption() {
+  navigator.clipboard.writeText(document.getElementById('captionText').textContent).then(() => {
+    const b = event.target; b.textContent = '✅ Copié !';
+    setTimeout(() => { b.textContent = '📋 Copier'; }, 2000);
+  });
+}
+
+function saveToHistory() {
+  if (!currentStory) return;
+  savedHistory.unshift({...currentStory, slides:currentSlides});
+  if (savedHistory.length > 20) savedHistory = savedHistory.slice(0,20);
+  localStorage.setItem('bc_stories_v6', JSON.stringify(savedHistory));
+  renderHistoryList();
+  const b = event.target; b.textContent = '✅ Sauvegardé';
+  setTimeout(() => { b.textContent = '⭐ Garder'; }, 2000);
+}
+
+function renderHistoryList() {
+  const list = document.getElementById('historyList');
+  const section = document.getElementById('historySection');
+  if (!savedHistory.length) { section.style.display='none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = savedHistory.map((s,i) => `
+    <div class="history-item" onclick="showHistoryItem(${i})">
+      <span class="history-emoji">${typeLabels[s.type]?.emoji||'✦'}</span>
+      <div class="history-content">
+        <div class="history-type">${s.date} · ${typeLabels[s.type]?.label||s.type}</div>
+        <div class="history-hook">${s.hook}</div>
+      </div>
+    </div>`).join('');
+}
+
+async function showHistoryItem(i) {
+  const s = savedHistory[i]; if (!s) return;
+  currentStory = s; selectedType = s.type;
+  currentSlides = s.slides || []; currentSlideIdx = 0;
+  currentPhotos = currentSlides.map((_,j) => getPhotoUrl(s.type, j));
+  const t = typeLabels[s.type]||{label:s.type,emoji:'✦'};
+  document.getElementById('cardType').textContent = t.label;
+  document.getElementById('cardEmoji').textContent = t.emoji;
+  document.getElementById('hookText').textContent = s.hook;
+  document.getElementById('conceptTitle').textContent = s.concept_title;
+  document.getElementById('conceptText').textContent = s.concept_explain;
+  document.getElementById('captionText').textContent = currentSlides.join('\n\n');
+  buildDots(); await renderSlide(0);
+  document.getElementById('resultCard').classList.add('visible');
+  document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+renderHistoryList();
+</script>
+</body>
+</html>
