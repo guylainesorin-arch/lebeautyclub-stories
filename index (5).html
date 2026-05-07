@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Story du jour · Le Beauty Club</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --beige: #F5EFE6;
+    --beige-dark: #E8DDD0;
+    --sage: #8A9E85;
+    --sage-dark: #6B7D67;
+    --brown: #5C4A3A;
+    --text: #2C1F14;
+    --white: #FEFCF9;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--beige); font-family:'DM Sans',sans-serif; color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:40px 20px 60px; }
+  body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events:none; z-index:0; }
+  .container { width:100%; max-width:540px; position:relative; z-index:1; }
+  .header { text-align:center; margin-bottom:40px; }
+  .brand { font-family:'Cormorant Garamond',serif; font-size:13px; letter-spacing:.25em; text-transform:uppercase; color:var(--sage-dark); margin-bottom:12px; }
+  .title { font-family:'Cormorant Garamond',serif; font-size:clamp(2.2rem,8vw,3rem); font-weight:300; line-height:1.1; color:var(--text); }
+  .title em { font-style:italic; color:var(--sage-dark); }
+  .subtitle { margin-top:12px; font-size:13px; color:var(--brown); opacity:.7; font-weight:300; }
+  .date-pill { display:inline-block; background:var(--sage); color:var(--white); font-size:11px; letter-spacing:.15em; text-transform:uppercase; padding:5px 14px; border-radius:20px; margin-bottom:28px; }
+  .type-selector { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:24px; }
+  .type-btn { background:var(--white); border:1.5px solid var(--beige-dark); border-radius:10px; padding:10px 12px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--brown); cursor:pointer; transition:all .2s; text-align:center; }
+  .type-btn:hover { border-color:var(--sage); color:var(--sage-dark); }
+  .type-btn.active { background:var(--sage); border-color:var(--sage); color:var(--white); font-weight:500; }
+  .type-btn span { display:block; font-size:16px; margin-bottom:3px; }
+  .generate-btn { width:100%; background:var(--text); color:var(--white); border:none; border-radius:14px; padding:18px 24px; font-family:'Cormorant Garamond',serif; font-size:1.15rem; cursor:pointer; transition:all .25s; display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:28px; }
+  .generate-btn:hover { background:var(--brown); transform:translateY(-1px); }
+  .generate-btn:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+  .loader { display:none; width:18px; height:18px; border:2px solid rgba(255,255,255,.3); border-top-color:white; border-radius:50%; animation:spin .7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .result-card { background:var(--white); border-radius:18px; overflow:hidden; box-shadow:0 4px 30px rgba(44,31,20,.08); display:none; animation:slideUp .4s cubic-bezier(.16,1,.3,1); }
+  @keyframes slideUp { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
+  .result-card.visible { display:block; }
+  .card-header { background:var(--sage); padding:18px 24px; display:flex; align-items:center; justify-content:space-between; }
+  .card-type { font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.8); }
+  .card-emoji { font-size:1.3rem; }
+  .card-body { padding:28px 24px; }
+  .section-label { font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--sage-dark); margin-bottom:8px; font-weight:500; }
+  .hook-text { font-family:'Cormorant Garamond',serif; font-size:1.5rem; font-weight:400; line-height:1.35; color:var(--text); margin-bottom:24px; padding-bottom:20px; border-bottom:1px solid var(--beige-dark); }
+  .concept-box { background:var(--beige); border-radius:10px; padding:16px 18px; margin-bottom:20px; }
+  .concept-title { font-size:13px; font-weight:500; color:var(--text); margin-bottom:6px; }
+  .concept-text { font-size:13px; line-height:1.65; color:var(--brown); font-weight:300; }
+  .caption-area { margin-bottom:24px; }
+  .caption-text { font-size:14px; line-height:1.8; color:var(--text); white-space:pre-wrap; background:var(--beige); border-radius:10px; padding:16px 18px; border-left:3px solid var(--sage); }
+  .slides-section { margin-bottom:8px; }
+  .slides-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .slides-nav { display:flex; gap:6px; }
+  .slide-dot { width:8px; height:8px; border-radius:50%; background:var(--beige-dark); border:none; cursor:pointer; transition:all .2s; padding:0; }
+  .slide-dot.active { background:var(--sage); transform:scale(1.2); }
+  .canvas-wrap { position:relative; border-radius:14px; overflow:hidden; background:#111; }
+  #storyCanvas { display:block; width:100%; cursor:pointer; }
+  .canvas-loading { position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.75); color:white; font-size:13px; font-family:'DM Sans',sans-serif; }
+  .dl-bar { background:#111; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; border-radius:0 0 14px 14px; }
+  .dl-bar-info { font-size:11px; color:rgba(255,255,255,.35); font-style:italic; }
+  .dl-btns { display:flex; gap:8px; flex-shrink:0; }
+  .dl-btn { background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); color:rgba(255,255,255,.75); border-radius:8px; padding:6px 12px; font-size:11px; font-family:'DM Sans',sans-serif; cursor:pointer; transition:all .2s; white-space:nowrap; }
+  .dl-btn:hover { background:rgba(255,255,255,.2); color:white; }
+  .dl-btn.all { background:var(--sage); border-color:var(--sage); color:white; }
+  .dl-btn.all:hover { background:var(--sage-dark); }
+  .dl-btn:disabled { opacity:.5; cursor:not-allowed; }
+  .card-actions { display:flex; gap:10px; padding:4px 24px 24px; }
+  .action-btn { flex:1; padding:11px; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; cursor:pointer; transition:all .2s; border:1.5px solid var(--beige-dark); background:var(--white); color:var(--brown); }
+  .action-btn:hover { border-color:var(--sage); color:var(--sage-dark); }
+  .action-btn.primary { background:var(--text); color:white; border-color:var(--text); }
+  .action-btn.primary:hover { background:var(--brown); border-color:var(--brown); }
+  .error-msg { display:none; background:#FFF0ED; border:1px solid #F5C6BC; border-radius:10px; padding:14px 18px; font-size:13px; color:#8B3A2A; margin-bottom:16px; text-align:center; }
+  .history-title { font-family:'Cormorant Garamond',serif; font-size:1.1rem; color:var(--brown); margin:36px 0 16px; font-style:italic; text-align:center; opacity:.7; }
+  .history-list { display:flex; flex-direction:column; gap:8px; }
+  .history-item { background:var(--white); border-radius:10px; padding:14px 18px; cursor:pointer; transition:all .2s; border:1.5px solid transparent; display:flex; align-items:center; gap:12px; }
+  .history-item:hover { border-color:var(--beige-dark); }
+  .history-emoji { font-size:1.1rem; flex-shrink:0; }
+  .history-content { flex:1; min-width:0; }
+  .history-type { font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--sage-dark); margin-bottom:3px; }
+  .history-hook { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'Cormorant Garamond',serif; font-size:1rem; color:var(--text); }
+  .divider { height:1px; background:var(--beige-dark); margin:28px 0; }
+  @media(max-width:420px){ .card-actions{flex-direction:column} .dl-btns{flex-direction:column} }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="brand">Le Beauty Club</div>
+    <h1 class="title">Ma story<br><em>du jour</em></h1>
+    <p class="subtitle">Une idée prête à publier, chaque jour.</p>
+  </div>
+  <div style="text-align:center;margin-bottom:20px">
+    <div class="date-pill" id="datePill">—</div>
+  </div>
+  <div class="type-selector">
+    <button class="type-btn active" data-type="coulisses" onclick="selectType(this)"><span>🎬</span>Coulisses</button>
+    <button class="type-btn" data-type="education" onclick="selectType(this)"><span>💡</span>Éducation</button>
+    <button class="type-btn" data-type="temoignage" onclick="selectType(this)"><span>💬</span>Témoignage</button>
+    <button class="type-btn" data-type="vente" onclick="selectType(this)"><span>✨</span>Offre / Vente</button>
+    <button class="type-btn" data-type="sondage" onclick="selectType(this)" style="grid-column:span 2"><span>📊</span>Sondage / Interaction</button>
+  </div>
+  <button class="generate-btn" id="generateBtn" onclick="generateStory()">
+    <span>✦</span><span id="btnText">Générer ma story du jour</span>
+    <div class="loader" id="loader"></div>
+  </button>
+  <div class="error-msg" id="errorMsg"></div>
+
+  <div class="result-card" id="resultCard">
+    <div class="card-header">
+      <span class="card-type" id="cardType">—</span>
+      <span class="card-emoji" id="cardEmoji">✦</span>
+    </div>
+    <div class="card-body">
+      <div class="section-label">🪝 Accroche</div>
+      <div class="hook-text" id="hookText">—</div>
+      <div class="concept-box">
+        <div class="concept-title" id="conceptTitle">—</div>
+        <div class="concept-text" id="conceptText">—</div>
+      </div>
+      <div class="caption-area">
+        <div class="section-label">📝 Texte slide par slide</div>
+        <div class="caption-text" id="captionText">—</div>
+      </div>
+      <div class="section-label" style="margin-bottom:10px">🖤 Visuels</div>
+      <div class="slides-section">
+        <div class="slides-header">
+          <div class="slides-nav" id="slidesDots"></div>
+          <span style="font-size:11px;color:var(--brown);opacity:.6" id="slideCounter">—</span>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="storyCanvas"></canvas>
+          <div class="canvas-loading" id="canvasLoading">Chargement de la photo…</div>
+        </div>
+        <div class="dl-bar">
+          <span class="dl-bar-info">Clique sur le visuel pour changer de slide</span>
+          <div class="dl-btns">
+            <button class="dl-btn" id="dlOne" onclick="downloadCurrent()">⬇ Cette slide</button>
+            <button class="dl-btn all" id="dlAll" onclick="downloadAll()">⬇ Toutes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-actions">
+      <button class="action-btn" onclick="copyCaption()">📋 Copier</button>
+      <button class="action-btn" onclick="generateStory()">🔄 Autre idée</button>
+      <button class="action-btn primary" onclick="saveToHistory()">⭐ Garder</button>
+    </div>
+  </div>
+
+  <div id="historySection" style="display:none">
+    <div class="divider"></div>
+    <div class="history-title">Stories sauvegardées</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+</div>
+
+<script>
+let selectedType = 'coulisses';
+let currentStory = null;
+let currentSlides = [];
+let currentSlideIdx = 0;
+let currentPhotos = [];
+let savedHistory = JSON.parse(localStorage.getItem('bc_stories_v6') || '[]');
+
+const typeLabels = {
+  coulisses:  {label:'Coulisses',           emoji:'🎬'},
+  education:  {label:'Éducation Instagram',  emoji:'💡'},
+  temoignage: {label:'Témoignage',           emoji:'💬'},
+  vente:      {label:'Offre / Vente',        emoji:'✨'},
+  sondage:    {label:'Sondage',              emoji:'📊'},
+};
+
+// Photo keywords per type — Unsplash Source (free, no key needed)
+const photoKeywords = {
+  coulisses:  ['woman laptop desk','entrepreneur notebook morning','working woman cafe','desk coffee journal'],
+  temoignage: ['woman thinking light','journal writing hands','woman window reflection','coffee hands close'],
+  education:  ['skincare serum beauty','face cream close','beauty products marble','facial treatment'],
+  vente:      ['skincare glow close','serum drops hands','spa cosmetics elegant','beauty flatlay'],
+  sondage:    ['woman phone smile','hands smartphone coffee','woman laptop smile','female phone cafe'],
+};
+
+async async function getPhotoUrl(type, seed) {
+  const kws = photoKeywords[type] || photoKeywords.coulisses;
+  const kw = kws[seed % kws.length];
+  try {
+    const res = await fetch(`/.netlify/functions/generate?photo=${encodeURIComponent(kw)}`);
+    const data = await res.json();
+    return data.url || null;
+  } catch(e) { return null; }
+}
+
+const SYSTEM_BASE = `Tu es Guylaine, fondatrice du Beauty Club (lebeautyclub.fr).
+
+QUI TU ES :
+Ancienne esthéticienne reconvertie en community manager, puis entrepreneuse. Tu as passé presque 5 mois à créer Le Beauty Club de A à Z parce que ça n'existait pas en France. Tu es maman et tu veux montrer à tes filles qu'on peut créer quelque chose de beau. Tu as de l'humour, tes clientes deviennent tes copines, tu es directe et tu restes une vraie experte.
+
+CE QU'EST LE BEAUTY CLUB :
+Une plateforme d'abonnement mensuel pour les esthéticiennes indépendantes, prothésistes ongulaires, techniciennes en pose de cils et praticiennes en remodelage corporel. Sur la plateforme elles trouvent un calendrier de contenu avec une idée par jour, une bibliothèque de templates Canva personnalisables avec la version gratuite, des mini-formations à venir, des prompts IA pour générer des visuels et une communauté privée pour ne plus jamais bosser seule. Le contenu n'est pas générique, il est créé à partir des vraies tendances et des échanges réels avec les abonnées. L'objectif : qu'elles prennent 10 minutes pendant la pause déj et que leur contenu du jour soit fait.
+
+TON STYLE :
+Tu écris de vraies phrases complètes. Jamais de tirets comme séparateurs. Tu tutoies tes abonnées. Pas d'anglicismes. Jamais lisse.
+
+COMPTE : @lebeautyclub__`;
+
+const typePrompts = {
+  coulisses:  `${SYSTEM_BASE}\n\nPOUR CETTE STORY : montre les vraies coulisses du Beauty Club — ce que tu crées en ce moment, une décision que tu as prise, un truc qui s'est bien ou mal passé. Montre le vrai, pas le parfait.`,
+  education:  `${SYSTEM_BASE}\n\nPOUR CETTE STORY : enseigne un truc concret sur Instagram aux esthéticiennes. Explique pourquoi ça marche. Ton double regard community manager et esthéticienne doit se sentir.`,
+  temoignage: `${SYSTEM_BASE}\n\nPOUR CETTE STORY : partage un moment vrai de ta vie d'entrepreneuse — une galère, un doute, une victoire. Quelque chose qui va faire dire "oh my god c'est exactement ça".`,
+  vente:      `${SYSTEM_BASE}\n\nPOUR CETTE STORY : parle du Beauty Club avec envie, pas avec pression. Montre ce que ça change concrètement dans le quotidien d'une esthéticienne.`,
+  sondage:    `${SYSTEM_BASE}\n\nPOUR CETTE STORY : crée une story interactive — sondage, quiz ou question ouverte — qui donne envie de répondre.`,
+};
+
+const now = new Date();
+const opts = {weekday:'long',day:'numeric',month:'long'};
+document.getElementById('datePill').textContent =
+  now.toLocaleDateString('fr-FR', opts).replace(/^\w/, c => c.toUpperCase());
+
+function selectType(btn) {
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedType = btn.dataset.type;
+}
+
+async function generateStory() {
+  const btn = document.getElementById('generateBtn');
+  const loader = document.getElementById('loader');
+  const btnText = document.getElementById('btnText');
+  const errorMsg = document.getElementById('errorMsg');
+  btn.disabled = true; loader.style.display = 'block';
+  btnText.textContent = 'En cours…'; errorMsg.style.display = 'none';
+  document.getElementById('resultCard').classList.remove('visible');
+
+  const dateStr = now.toLocaleDateString('fr-FR', opts);
+  const userPrompt = `Génère UNE idée de story Instagram pour aujourd'hui (${dateStr}).
+
+Réponds UNIQUEMENT en JSON valide, sans backticks, sans rien avant ou après :
+{
+  "hook": "L'accroche, 1 à 2 phrases, comme Guylaine parle vraiment.",
+  "concept_title": "Le concept en 4 à 6 mots",
+  "concept_explain": "2 à 3 phrases qui expliquent ce que tu vas montrer et pourquoi ça résonne.",
+  "slides": ["Texte slide 1 (vraie phrase complète)", "Texte slide 2", "Texte slide 3", "Texte slide 4 optionnel", "Texte slide 5 optionnel"]
+}
+slides = tableau de 3 à 5 strings. Vraies phrases. Pas de tirets. Pas de hashtags.`;
+
+  try {
+    const response = await fetch('/.netlify/functions/generate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ system: typePrompts[selectedType], userPrompt })
+    });
+
+    const responseText = await response.text();
+    let data;
+    try { data = JSON.parse(responseText); } catch(e) { throw new Error('Réponse invalide: ' + responseText.slice(0,200)); }
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    const raw = data.content?.find(b => b.type==='text')?.text || '';
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const story = JSON.parse(clean);
+
+    currentStory = {...story, type:selectedType, date:now.toLocaleDateString('fr-FR')};
+    currentSlides = story.slides || [];
+    currentSlideIdx = 0;
+    currentPhotos = await Promise.all(currentSlides.map((_,i) => getPhotoUrl(selectedType, i)));
+
+    const t = typeLabels[selectedType];
+    document.getElementById('cardType').textContent = t.label;
+    document.getElementById('cardEmoji').textContent = t.emoji;
+    document.getElementById('hookText').textContent = story.hook;
+    document.getElementById('conceptTitle').textContent = story.concept_title;
+    document.getElementById('conceptText').textContent = story.concept_explain;
+    document.getElementById('captionText').textContent = currentSlides.join('\n\n');
+
+    buildDots();
+    await renderSlide(0);
+
+    document.getElementById('resultCard').classList.add('visible');
+    document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
+
+  } catch(e) {
+    errorMsg.textContent = 'Erreur : ' + (e.message || 'inconnue');
+    errorMsg.style.display = 'block';
+  }
+
+  btn.disabled = false; loader.style.display = 'none';
+  btnText.textContent = 'Générer ma story du jour';
+}
+
+function buildDots() {
+  const dots = document.getElementById('slidesDots');
+  dots.innerHTML = currentSlides.map((_,i) =>
+    `<button class="slide-dot ${i===0?'active':''}" onclick="goToSlide(${i})"></button>`
+  ).join('');
+  document.getElementById('slideCounter').textContent = `1 / ${currentSlides.length}`;
+}
+
+async function goToSlide(i) {
+  currentSlideIdx = i;
+  document.querySelectorAll('.slide-dot').forEach((d,j) => d.classList.toggle('active', j===i));
+  document.getElementById('slideCounter').textContent = `${i+1} / ${currentSlides.length}`;
+  await renderSlide(i);
+}
+
+document.getElementById('storyCanvas').addEventListener('click', async () => {
+  if (!currentSlides.length) return;
+  await goToSlide((currentSlideIdx + 1) % currentSlides.length);
+});
+
+async function renderSlide(idx) {
+  const canvas = document.getElementById('storyCanvas');
+  const loading = document.getElementById('canvasLoading');
+  const slideText = currentSlides[idx] || '';
+  const photoUrl = currentPhotos[idx];
+
+  const W = Math.min(480, window.innerWidth - 40);
+  const H = Math.round(W * 16 / 9);
+  canvas.width = W * 2;
+  canvas.height = H * 2;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  loading.style.display = 'flex';
+
+  try {
+    const img = await loadImage(photoUrl);
+    loading.style.display = 'none';
+    const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+    const sw = img.width * scale, sh = img.height * scale;
+    ctx.drawImage(img, (canvas.width-sw)/2, (canvas.height-sh)/2, sw, sh);
+  } catch(e) {
+    loading.style.display = 'none';
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+
+  // Overlay
+  const ov = ctx.createLinearGradient(0,0,0,canvas.height);
+  ov.addColorStop(0,   'rgba(0,0,0,0.1)');
+  ov.addColorStop(0.45,'rgba(0,0,0,0.25)');
+  ov.addColorStop(1,   'rgba(0,0,0,0.80)');
+  ctx.fillStyle = ov;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  const s = 2;
+
+  // Slide counter top left
+  ctx.font = `300 ${10*s}px 'DM Sans',sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(`${idx+1} / ${currentSlides.length}`, 20*s, 22*s);
+
+  // Main text bottom
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  const maxW = (W - 56) * s;
+  const fontSize = 36 * s;
+  ctx.font = `300 ${fontSize}px 'Cormorant Garamond',serif`;
+  const lines = wrapText(ctx, slideText, maxW, fontSize);
+  const lineH = fontSize * 1.28;
+  const totalH = lines.length * lineH;
+  const baseY = canvas.height - 48*s;
+
+  lines.forEach((line, i) => {
+    ctx.shadowColor = 'rgba(0,0,0,0.7)';
+    ctx.shadowBlur = 16;
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.fillText(line, canvas.width/2, baseY - totalH + (i+1)*lineH);
+  });
+  ctx.shadowBlur = 0;
+
+  // Branding
+  ctx.font = `300 ${9*s}px 'DM Sans',sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('LE BEAUTY CLUB', canvas.width/2, canvas.height - 14*s);
+}
+
+function loadImage(url) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => res(img);
+    img.onerror = () => rej();
+    img.src = url;
+    setTimeout(() => rej(), 9000);
+  });
+}
+
+function wrapText(ctx, text, maxWidth, fontSize) {
+  ctx.font = `300 ${fontSize}px 'Cormorant Garamond',serif`;
+  const words = text.split(' ');
+  const lines = [];
+  let cur = '';
+  for (const w of words) {
+    const test = cur ? cur+' '+w : w;
+    if (ctx.measureText(test).width > maxWidth && cur) { lines.push(cur); cur = w; }
+    else cur = test;
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+function downloadCurrent() {
+  const canvas = document.getElementById('storyCanvas');
+  const a = document.createElement('a');
+  a.download = `lebeautyclub-story-${currentSlideIdx+1}.png`;
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+async function downloadAll() {
+  const btn = document.getElementById('dlAll');
+  btn.textContent = '⏳ En cours…'; btn.disabled = true;
+  for (let i = 0; i < currentSlides.length; i++) {
+    await renderSlide(i);
+    await new Promise(r => setTimeout(r, 400));
+    downloadCurrent();
+    await new Promise(r => setTimeout(r, 400));
+  }
+  await renderSlide(currentSlideIdx);
+  btn.textContent = '⬇ Toutes'; btn.disabled = false;
+}
+
+function copyCaption() {
+  navigator.clipboard.writeText(document.getElementById('captionText').textContent).then(() => {
+    const b = event.target; b.textContent = '✅ Copié !';
+    setTimeout(() => { b.textContent = '📋 Copier'; }, 2000);
+  });
+}
+
+function saveToHistory() {
+  if (!currentStory) return;
+  savedHistory.unshift({...currentStory, slides:currentSlides});
+  if (savedHistory.length > 20) savedHistory = savedHistory.slice(0,20);
+  localStorage.setItem('bc_stories_v6', JSON.stringify(savedHistory));
+  renderHistoryList();
+  const b = event.target; b.textContent = '✅ Sauvegardé';
+  setTimeout(() => { b.textContent = '⭐ Garder'; }, 2000);
+}
+
+function renderHistoryList() {
+  const list = document.getElementById('historyList');
+  const section = document.getElementById('historySection');
+  if (!savedHistory.length) { section.style.display='none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = savedHistory.map((s,i) => `
+    <div class="history-item" onclick="showHistoryItem(${i})">
+      <span class="history-emoji">${typeLabels[s.type]?.emoji||'✦'}</span>
+      <div class="history-content">
+        <div class="history-type">${s.date} · ${typeLabels[s.type]?.label||s.type}</div>
+        <div class="history-hook">${s.hook}</div>
+      </div>
+    </div>`).join('');
+}
+
+async function showHistoryItem(i) {
+  const s = savedHistory[i]; if (!s) return;
+  currentStory = s; selectedType = s.type;
+  currentSlides = s.slides || []; currentSlideIdx = 0;
+  currentPhotos = await Promise.all(currentSlides.map((_,j) => getPhotoUrl(s.type, j)));
+  const t = typeLabels[s.type]||{label:s.type,emoji:'✦'};
+  document.getElementById('cardType').textContent = t.label;
+  document.getElementById('cardEmoji').textContent = t.emoji;
+  document.getElementById('hookText').textContent = s.hook;
+  document.getElementById('conceptTitle').textContent = s.concept_title;
+  document.getElementById('conceptText').textContent = s.concept_explain;
+  document.getElementById('captionText').textContent = currentSlides.join('\n\n');
+  buildDots(); await renderSlide(0);
+  document.getElementById('resultCard').classList.add('visible');
+  document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+renderHistoryList();
+</script>
+</body>
+</html>
