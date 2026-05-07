@@ -180,10 +180,14 @@ const photoKeywords = {
   sondage:    ['woman phone smile','hands smartphone coffee','woman laptop smile','female phone cafe'],
 };
 
-function getPhotoUrl(type, seed) {
+async async function getPhotoUrl(type, seed) {
   const kws = photoKeywords[type] || photoKeywords.coulisses;
   const kw = kws[seed % kws.length];
-  return `https://source.unsplash.com/900x1600/?${encodeURIComponent(kw)}&sig=${Math.floor(Date.now()/60000)}_${seed}`;
+  try {
+    const res = await fetch(`/.netlify/functions/generate?photo=${encodeURIComponent(kw)}`);
+    const data = await res.json();
+    return data.url || null;
+  } catch(e) { return null; }
 }
 
 const SYSTEM_BASE = `Tu es Guylaine, fondatrice du Beauty Club (lebeautyclub.fr).
@@ -257,7 +261,7 @@ slides = tableau de 3 à 5 strings. Vraies phrases. Pas de tirets. Pas de hashta
     currentStory = {...story, type:selectedType, date:now.toLocaleDateString('fr-FR')};
     currentSlides = story.slides || [];
     currentSlideIdx = 0;
-    currentPhotos = currentSlides.map((_,i) => getPhotoUrl(selectedType, i));
+    currentPhotos = await Promise.all(currentSlides.map((_,i) => getPhotoUrl(selectedType, i)));
 
     const t = typeLabels[selectedType];
     document.getElementById('cardType').textContent = t.label;
@@ -456,7 +460,7 @@ async function showHistoryItem(i) {
   const s = savedHistory[i]; if (!s) return;
   currentStory = s; selectedType = s.type;
   currentSlides = s.slides || []; currentSlideIdx = 0;
-  currentPhotos = currentSlides.map((_,j) => getPhotoUrl(s.type, j));
+  currentPhotos = await Promise.all(currentSlides.map((_,j) => getPhotoUrl(s.type, j)));
   const t = typeLabels[s.type]||{label:s.type,emoji:'✦'};
   document.getElementById('cardType').textContent = t.label;
   document.getElementById('cardEmoji').textContent = t.emoji;
